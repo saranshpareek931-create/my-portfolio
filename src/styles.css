@@ -1177,4 +1177,12 @@ textarea {
   .button--swarm {
     display: none;
   }
+  body::before {
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+    opacity: 0.22 !important;
+  }
+  .portrait-wrap {
+    animation: none !important;
+  }
 }

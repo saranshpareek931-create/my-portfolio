@@ -32,10 +32,11 @@
   const BLUE = "#0D99FF";
   const RED = "#F24822";
   const RULER = 20;
-  const MIN_AGENTS = 8;
-  const MAX_AGENTS = 48;
-  const FLOCK_AGENTS = 36;
-  const INTRO_AGENTS = 18;
+  const isMobile = typeof window !== "undefined" && (window.innerWidth < 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
+  const MIN_AGENTS = isMobile ? 5 : 8;
+  const MAX_AGENTS = isMobile ? 12 : 22;
+  const FLOCK_AGENTS = isMobile ? 8 : 16;
+  const INTRO_AGENTS = isMobile ? 6 : 10;
   const MAX_ITEMS = 4000;
   const MAX_WORLD_H = 40000;
   const SVGNS = "http://www.w3.org/2000/svg";
@@ -1505,10 +1506,10 @@
 @keyframes blink{50%{opacity:0}}
 .sa{background-color:rgba(13,153,255,.28)!important}
 .ov{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-.badges,.cursors{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.badges,.cursors{position:absolute;inset:0;pointer-events:none;overflow:hidden;transform:translateZ(0);will-change:transform}
 .badge{position:absolute;transform:translate(-50%);padding:1px 4px;border-radius:2px;color:#fff;font:600 11px/16px Inter,system-ui,-apple-system,"Segoe UI",sans-serif;white-space:nowrap;font-variant-numeric:tabular-nums}
-.cursor{position:absolute;left:0;top:0;will-change:transform}
-.cursor svg{position:absolute;overflow:visible;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.28))}
+.cursor{position:absolute;left:0;top:0;will-change:transform;transform:translateZ(0)}
+.cursor svg{position:absolute;overflow:visible}
 .rulers{position:absolute;inset:0;pointer-events:none}
 .ruler{position:absolute;background:#2c2c2c;pointer-events:none}
 .ruler svg{display:block}
@@ -2291,7 +2292,10 @@
       const sv = Math.abs(vp.sy - (this.lastScroll == null ? vp.sy : this.lastScroll)) / Math.max(dt, 0.001);
       this.lastScroll = vp.sy;
       this.vel = Math.max(this.vel * Math.exp(-dt * 1.2), this.vel * 0.7 + sv * 0.3);
-      if (this.started) this.frontier = Math.max(this.frontier, this.viewBot);
+      if (this.started) {
+        const elapsed = Math.max(0, this.time - (this.startTime || this.time));
+        this.frontier = Math.max(this.frontier, this.viewBot + elapsed * 450);
+      }
       const avail = this.started ? this.available() : [];
       this.tempo = clamp(2.1 + this.vel / 900 + (avail.length / Math.max(1, this.cursors.length)) * 0.5, 2.1, 4.5) * this.speed;
 
@@ -3089,16 +3093,24 @@
       master.connect(comp);
       comp.connect(out);
       out.connect(ctx.destination);
-      const verb = ctx.createConvolver();
-      verb.buffer = this.impulse(3.2, 2.4);
-      const wet = ctx.createGain();
-      wet.gain.value = 0.5;
-      verb.connect(wet);
-      wet.connect(master);
+      if (!isMobile) {
+        try {
+          const verb = ctx.createConvolver();
+          verb.buffer = this.impulse(1.0, 1.8);
+          const wet = ctx.createGain();
+          wet.gain.value = 0.35;
+          verb.connect(wet);
+          wet.connect(master);
+          this.verb = verb;
+        } catch (_) {
+          this.verb = null;
+        }
+      } else {
+        this.verb = null;
+      }
       this.out = out;
       this.master = master;
-      this.verb = verb;
-      this.noiseBuf = this.noise(1.5);
+      this.noiseBuf = this.noise(1.0);
       this.t0 = this.now();
       return true;
     }
@@ -3176,7 +3188,7 @@
       p.pan.setValueAtTime(pan, when);
       g.connect(p);
       p.connect(this.master);
-      if (send) {
+      if (send && this.verb) {
         const s = this.ctx.createGain();
         s.gain.value = send;
         p.connect(s);
@@ -3547,7 +3559,7 @@
       this.engine.setModel(model);
       this.model = model;
       mark("mount");
-      const wait = 1500 - (performance.now() - this.t0);
+      const wait = (isMobile ? 700 : 1100) - (performance.now() - this.t0);
       if (wait > 0) await sleep(wait);
       if (this.dead) return;
       this.engine.start();
@@ -3559,15 +3571,15 @@
       const H = env.scrollHeight();
       if (H <= g.vh * 1.25) return;
       this.view.frozen = { ...this.view.vp };
-      const steps = Math.min(28, Math.ceil(H / (g.vh * 0.85)));
+      const steps = Math.min(isMobile ? 6 : 12, Math.ceil(H / (g.vh * 0.9)));
       for (let i = 1; i <= steps && !this.dead; i++) {
         env.scrollTo(Math.min(H, (H / steps) * i));
         await nextFrame();
-        await sleep(30);
+        await sleep(15);
       }
       env.scrollTo(g.sy, g.sx);
       await nextFrame();
-      await sleep(750);
+      await sleep(180);
       env.scrollTo(g.sy, g.sx);
       this.view.frozen = null;
     }
