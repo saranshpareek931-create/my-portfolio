@@ -33,10 +33,10 @@
   const RED = "#F24822";
   const RULER = 20;
   const isMobile = typeof window !== "undefined" && (window.innerWidth < 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
-  const MIN_AGENTS = isMobile ? 5 : 8;
-  const MAX_AGENTS = isMobile ? 12 : 22;
-  const FLOCK_AGENTS = isMobile ? 8 : 16;
-  const INTRO_AGENTS = isMobile ? 6 : 10;
+  const MIN_AGENTS = isMobile ? 4 : 6;
+  const MAX_AGENTS = isMobile ? 8 : 18;
+  const FLOCK_AGENTS = isMobile ? 6 : 14;
+  const INTRO_AGENTS = isMobile ? 5 : 10;
   const MAX_ITEMS = 4000;
   const MAX_WORLD_H = 40000;
   const SVGNS = "http://www.w3.org/2000/svg";
@@ -1951,7 +1951,7 @@
       for (const g of E.guides) {
         if (!g.vis || g.op <= 0) continue;
         const sw = 1 + g.flash;
-        const flt = g.flash > 0 ? ` style="filter:drop-shadow(0 0 ${f1(2 + g.flash * 3)}px ${RED})"` : "";
+        const flt = g.flash > 0 && !isMobile ? ` style="filter:drop-shadow(0 0 ${f1(2 + g.flash * 3)}px ${RED})"` : "";
         if (g.axis === "x") {
           const x = X(g.cur);
           s += `<line x1="${x}" x2="${x}" y1="0" y2="${H}" stroke="${RED}" stroke-width="${sw}" opacity="${f1(g.op)}"${flt}/>`;
@@ -2010,6 +2010,7 @@
     }
 
     renderRulers(E) {
+      if (isMobile) return;
       const t = E.rulers.t;
       if (t <= 0.001) {
         if (this._rulersOn) {
@@ -3055,7 +3056,7 @@
   const PENTA = [0, 2, 4, 7, 9]; // E F# G# B C#
   const E2 = 40;
   const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
-  let soundPref = true;
+  let soundPref = !isMobile;
   const SPK_ICON = '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6v4h2.5l3.5 3V3L5 6z" fill="currentColor"/>';
 
   class Sound {
@@ -3559,6 +3560,8 @@
       this.engine.setModel(model);
       this.model = model;
       mark("mount");
+      const rootEl = document.getElementById("root");
+      if (rootEl) rootEl.style.visibility = "hidden";
       const wait = (isMobile ? 700 : 1100) - (performance.now() - this.t0);
       if (wait > 0) await sleep(wait);
       if (this.dead) return;
@@ -3764,6 +3767,8 @@
     }
 
     destroy(reveal) {
+      const rootEl = document.getElementById("root");
+      if (rootEl) rootEl.style.visibility = "";
       unhidePage();
       if (this.sfx) {
         if (reveal) this.sfx.release();
