@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { startSwarm, toggleSwarm } from './utils/swarm';
 
 const navItems = ['About', 'Projects', 'Skills', 'Education', 'Contact'];
 
@@ -66,6 +68,30 @@ const fadeUp = {
 };
 
 function App() {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const target = e.target;
+      const isInput = target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+      if (e.altKey && e.shiftKey && (e.key === 'S' || e.key === 's')) {
+        e.preventDefault();
+        toggleSwarm();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const hasSeen = sessionStorage.getItem('saransh_swarm_rebuild_seen');
+    if (!hasSeen) {
+      const timer = setTimeout(() => {
+        startSwarm();
+        sessionStorage.setItem('saransh_swarm_rebuild_seen', 'true');
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   return (
     <div className="app-shell">
       <div className="cursor" aria-hidden="true" />
@@ -84,9 +110,21 @@ function App() {
             ))}
           </div>
 
-          <a className="button button--ghost magnetic" href="#contact">
-            Let’s talk
-          </a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button
+              type="button"
+              className="button button--swarm"
+              onClick={() => toggleSwarm()}
+              title="Rebuild page with Swarm Cursors (Alt+Shift+S)"
+            >
+              <span className="swarm-dot" aria-hidden="true" />
+              <span>Swarm Rebuild</span>
+            </button>
+
+            <a className="button button--ghost magnetic" href="#contact">
+              Let’s talk
+            </a>
+          </div>
         </nav>
       </header>
 

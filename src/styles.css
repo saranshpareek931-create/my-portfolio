@@ -1131,3 +1131,50 @@ textarea {
 .portrait-wrap {
   animation: pulseGlow 6s ease-in-out infinite;
 }
+
+/* Swarm Rebuild Controls */
+.button--swarm {
+  background: rgba(255, 58, 58, 0.08);
+  border: 1px solid rgba(255, 58, 58, 0.45);
+  color: var(--white);
+  padding: 0 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 700;
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(255, 58, 58, 0.15);
+  transition: all 0.25s ease;
+}
+
+.button--swarm:hover {
+  background: rgba(255, 58, 58, 0.2);
+  border-color: var(--red);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 58, 58, 0.3);
+}
+
+.swarm-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff3a3a;
+  box-shadow: 0 0 8px #ff3a3a;
+  animation: swarm-pulse 1.8s infinite;
+}
+
+@keyframes swarm-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+@media (max-width: 768px) {
+  .button--swarm {
+    display: none;
+  }
+}
