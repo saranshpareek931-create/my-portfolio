@@ -1174,14 +1174,6 @@ textarea {
 }
 
 @media (max-width: 768px) {
-  body::before {
-    mask-image: none !important;
-    -webkit-mask-image: none !important;
-    opacity: 0.2 !important;
-  }
-  .portrait-wrap {
-    animation: none !important;
-  }
   .button--swarm {
     display: none;
   }
