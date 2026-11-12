@@ -4,13 +4,78 @@ import { mkdirSync } from 'node:fs';
 const OUT = 'public/assets';
 mkdirSync(OUT, { recursive: true });
 
-const src = 'Professional Passport Portrait.png';
+const src = 'avatar-3d.jpg';
+const { data, info } = await sharp(src).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+const { width, height, channels } = info;
+const rgba = Buffer.from(data);
 
-for (const w of [1100, 720, 420]) {
-  await sharp(src).resize({ width: w }).webp({ quality: 86 }).toFile(`${OUT}/portrait-${w}.webp`);
+// Edge-connected flood-fill to remove the solid black backdrop cleanly without touching dark hair/tie inside
+const visited = new Uint8Array(width * height);
+const queue = new Int32Array(width * height);
+let head = 0;
+let tail = 0;
+
+const isDarkBg = (idx) => {
+  const o = idx * channels;
+  return rgba[o] < 18 && rgba[o + 1] < 18 && rgba[o + 2] < 18;
+};
+
+const enqueue = (x, y) => {
+  if (x < 0 || x >= width || y < 0 || y >= height) return;
+  const idx = y * width + x;
+  if (visited[idx]) return;
+  if (isDarkBg(idx)) {
+    visited[idx] = 1;
+    queue[tail++] = idx;
+  }
+};
+
+for (let x = 0; x < width; x++) {
+  enqueue(x, 0);
+  enqueue(x, height - 1);
+}
+for (let y = 0; y < height; y++) {
+  enqueue(0, y);
+  enqueue(width - 1, y);
 }
 
-const portrait = await sharp(src).resize({ height: 600 }).png().toBuffer();
+while (head < tail) {
+  const idx = queue[head++];
+  const x = idx % width;
+  const y = (idx - x) / width;
+  enqueue(x + 1, y);
+  enqueue(x - 1, y);
+  enqueue(x, y + 1);
+  enqueue(x, y - 1);
+}
+
+// Clear alpha on background pixels and feather 1px boundary
+for (let i = 0; i < width * height; i++) {
+  if (visited[i]) {
+    rgba[i * channels + 3] = 0;
+  } else {
+    const x = i % width;
+    const y = (i - x) / width;
+    const touchesBg =
+      (x > 0 && visited[i - 1]) ||
+      (x < width - 1 && visited[i + 1]) ||
+      (y > 0 && visited[i - width]) ||
+      (y < height - 1 && visited[i + width]);
+    if (touchesBg) {
+      const o = i * channels;
+      const lum = (rgba[o] + rgba[o + 1] + rgba[o + 2]) / 3;
+      if (lum < 32) rgba[o + 3] = Math.round((lum / 32) * 200);
+    }
+  }
+}
+
+const cutout = await sharp(rgba, { raw: { width, height, channels } }).png().toBuffer();
+
+for (const w of [1100, 720, 420]) {
+  await sharp(cutout).resize({ width: w }).webp({ quality: 88, alphaQuality: 92 }).toFile(`${OUT}/portrait-${w}.webp`);
+}
+
+const portrait = await sharp(cutout).resize({ height: 600 }).png().toBuffer();
 await sharp({ create: { width: 1200, height: 630, channels: 4, background: '#07070a' } })
   .composite([
     {
@@ -31,4 +96,4 @@ await sharp({ create: { width: 1200, height: 630, channels: 4, background: '#070
   .jpeg({ quality: 85 })
   .toFile(`${OUT}/og-image.jpg`);
 
-console.log('Saransh portrait & og-image built!');
+console.log('Transparent 3D avatar WebP portraits & og-image built!');

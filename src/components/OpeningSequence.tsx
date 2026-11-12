@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { profile } from '../data/portfolio';
 import { useReducedMotionPref } from '../hooks/useMedia';
+import { playNetflixTudum, resetTudumFlag } from '../utils/sound';
 import { EASE, Magnetic } from './fx';
 
 /**
  * The signature moment:
- * black → studio card → SUSHMITA → THE SERIES → portrait reveal → role → ▶ PLAY
+ * black → studio card → SARANSH → THE SERIES → portrait reveal → role → ▶ PLAY
  */
 const TIMELINE = [
   { at: 300, beat: 1 }, // studio card
@@ -20,6 +21,29 @@ const TIMELINE = [
 export default function OpeningSequence({ onDone }: { onDone: () => void }) {
   const reduced = useReducedMotionPref();
   const [beat, setBeat] = useState(reduced ? 6 : 0);
+  const [soundBlocked, setSoundBlocked] = useState(false);
+
+  useEffect(() => {
+    resetTudumFlag();
+    // Try playing the Netflix Ta-dum sound at the iconic title slam (or immediately on replay)
+    const soundTimer = window.setTimeout(async () => {
+      const ok = await playNetflixTudum();
+      if (!ok) setSoundBlocked(true);
+    }, reduced ? 50 : 1850);
+
+    const unlock = async () => {
+      const ok = await playNetflixTudum();
+      if (ok) setSoundBlocked(false);
+    };
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+
+    return () => {
+      clearTimeout(soundTimer);
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, [reduced]);
 
   useEffect(() => {
     if (reduced) return;
@@ -134,7 +158,10 @@ export default function OpeningSequence({ onDone }: { onDone: () => void }) {
             <button
               type="button"
               data-cursor="play"
-              onClick={onDone}
+              onClick={() => {
+                playNetflixTudum(true);
+                onDone();
+              }}
               tabIndex={beat >= 6 ? 0 : -1}
               className="group flex items-center gap-3 rounded-full bg-bone px-9 py-4 font-sans text-base font-bold tracking-wide text-ink shadow-[0_0_60px_rgba(229,19,43,0.45)] transition hover:bg-white"
             >
@@ -143,6 +170,19 @@ export default function OpeningSequence({ onDone }: { onDone: () => void }) {
           </Magnetic>
         </motion.div>
       </div>
+
+      {soundBlocked && (
+        <button
+          type="button"
+          onClick={async () => {
+            const ok = await playNetflixTudum(true);
+            if (ok) setSoundBlocked(false);
+          }}
+          className="absolute left-4 top-[calc(7vh+12px)] z-40 flex items-center gap-2 rounded-full border border-crimson-2/50 bg-black/60 px-4 py-2 font-sans text-[11px] font-semibold tracking-[0.16em] text-bone backdrop-blur transition hover:border-crimson-2 hover:bg-crimson/20"
+        >
+          <span className="animate-pulse">🔊</span> TAP FOR SOUND
+        </button>
+      )}
 
       <button
         type="button"
