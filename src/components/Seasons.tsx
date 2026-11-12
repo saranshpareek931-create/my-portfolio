@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { seasons } from '../data/portfolio';
 import { EASE, SectionHeading } from './fx';
 import EpisodeCard from './EpisodeCard';
+import TimeMachineClock from './TimeMachineClock';
 import { RailButtons } from './Rail';
 
 export default function Seasons() {
@@ -15,8 +16,12 @@ export default function Seasons() {
       <SectionHeading
         kicker={`${seasons.length} Seasons`}
         title="My Journey"
-        aside={<p className="max-w-xs text-sm text-mist">Every stage of the resume, told as a season — select one to see its episodes.</p>}
+        aside={<p className="max-w-xs text-sm text-mist">Every stage of the journey, told as a season — travel through time or select a season.</p>}
       />
+
+      <div className="gutter">
+        <TimeMachineClock />
+      </div>
 
       {/* season selector */}
       <div className="rail gutter mb-8 flex gap-2 overflow-x-auto" role="tablist" aria-label="Seasons">

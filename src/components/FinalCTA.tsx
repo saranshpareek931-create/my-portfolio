@@ -22,8 +22,24 @@ export default function FinalCTA({ onReplay }: { onReplay: () => void }) {
 
   return (
     <section id="contact" ref={ref} className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-4 py-24 text-center">
-      <div aria-hidden className="absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_60%,rgba(229,19,43,0.18),transparent_70%)]" />
+      <div aria-hidden className="absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_60%,rgba(222,27,28,0.22),transparent_70%)]" />
       <Particles count={36} />
+
+      {/* cinematic-portofilo Scene 6 corner editorial captions */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 hidden md:block">
+        <p className="font-editorial absolute left-10 top-14 text-left text-[11px] uppercase leading-relaxed tracking-[0.26em] text-smoke">
+          Ideas<br />Builds<br />Experiences<br /><span className="text-bone">Real Impact</span>
+        </p>
+        <p className="font-editorial absolute right-10 top-14 text-right text-[11px] uppercase leading-relaxed tracking-[0.26em] text-smoke">
+          Same<br />Passion<br />A Brighter<br /><span className="text-crimson-2">Tomorrow</span>
+        </p>
+        <p className="font-editorial absolute bottom-20 left-10 text-left text-[11px] uppercase leading-relaxed tracking-[0.26em] text-smoke">
+          A<br />Developer&rsquo;s<br /><span className="text-bone">World</span>
+        </p>
+        <p className="font-editorial absolute bottom-20 right-10 text-right text-[11px] uppercase leading-relaxed tracking-[0.26em] text-smoke">
+          Design<br />Build<br />Explore<br /><span className="text-crimson-2">Repeat</span>
+        </p>
+      </div>
 
       <motion.p
         className="relative mb-6 text-[11px] font-bold uppercase tracking-[0.5em] text-crimson-2"
@@ -34,7 +50,7 @@ export default function FinalCTA({ onReplay }: { onReplay: () => void }) {
         The Next Episode
       </motion.p>
       <motion.h2
-        className="relative font-display leading-[0.85] text-bone"
+        className="grunge-word relative font-display leading-[0.85]"
         style={{ fontSize: 'clamp(3.4rem, 13vw, 12rem)', letterSpacing: spacing, filter: blur, opacity }}
       >
         TO BE CONTINUED…

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'framer-motion';
 import { sectionMeta, viewerProfiles, type ProfileId, type SectionId } from '../data/portfolio';
 import { useSmoothScroll } from '../hooks/smoothScroll';
-import { SeriesMark } from './Poster';
 import { ProfileAvatar } from './ProfileSelector';
 import { EASE } from './fx';
 
@@ -64,9 +63,15 @@ export default function Navbar({ order, profileId, onSwitch }: { order: SectionI
           solid || mobileNav ? 'bg-ink/80 backdrop-blur-xl' : 'bg-gradient-to-b from-black/80 to-transparent'
         }`}
       >
-        <div className="flex items-center gap-8 lg:gap-10">
-          <button type="button" onClick={() => go('top')} className="text-[22px]" aria-label="Back to top">
-            <SeriesMark />
+        <div className="flex items-center gap-4 lg:gap-6">
+          <button type="button" onClick={() => go('top')} className="flex items-center gap-3 text-left" aria-label="Back to top">
+            <span className="font-display text-2xl tracking-[0.02em] grunge-word sm:text-[28px]">SARANSH</span>
+            <span className="hidden h-5 w-px bg-white/20 sm:block" aria-hidden />
+            <span className="hidden font-editorial text-[8.5px] uppercase leading-[1.35] tracking-[0.32em] text-mist sm:grid">
+              <span>Developer</span>
+              <span>Creator</span>
+              <span>Builder</span>
+            </span>
           </button>
           <nav className="hidden items-center gap-6 lg:flex" aria-label="Sections">
             <NavLink label="Home" active={active === 'top'} onClick={() => go('top')} />
@@ -76,11 +81,19 @@ export default function Navbar({ order, profileId, onSwitch }: { order: SectionI
           </nav>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="hidden items-end gap-1.5 sm:grid">
+            <span className="font-editorial text-[9px] uppercase tracking-[0.28em] text-mist">Portfolio — MMXXVI</span>
+            <span className="flex justify-end gap-1.5" aria-hidden>
+              <i className="block h-1.5 w-1.5 rounded-full bg-crimson" />
+              <i className="block h-1.5 w-1.5 rounded-full bg-crimson" />
+              <i className="block h-1.5 w-1.5 rounded-full bg-crimson" />
+            </span>
+          </div>
           <button
             type="button"
             onClick={() => go('contact')}
-            className="hidden rounded-full border border-white/15 px-4 py-1.5 text-xs font-semibold tracking-[0.14em] text-bone transition hover:border-crimson-2 hover:text-crimson-2 sm:block"
+            className="hidden rounded-full border border-white/20 px-4 py-1.5 font-editorial text-[11px] font-medium uppercase tracking-[0.2em] text-bone transition hover:border-crimson-2 hover:text-crimson-2 sm:block"
           >
             LET&apos;S BUILD
           </button>

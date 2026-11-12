@@ -70,6 +70,31 @@ export default function Hero({ onPlay, onResume, profileId }: { onPlay: () => vo
         <span className="light-streak left-[40%] top-[22%] w-[50vw]" style={{ animationDelay: '1.2s' }} />
         <span className="light-streak left-[30%] top-[64%] w-[40vw]" style={{ animationDelay: '3.6s' }} />
         <span className="light-streak left-[55%] top-[44%] w-[30vw]" style={{ animationDelay: '5.2s' }} />
+        {/* Giant distressed grunge wordmark backdrop (cinematic-portofilo signature) */}
+        <p
+          className="grunge-word pointer-events-none absolute left-1/2 top-[28%] -translate-x-1/2 -translate-y-1/2 select-none font-display leading-none tracking-[0.02em] opacity-25 lg:left-[64%] lg:top-[36%]"
+          style={{ fontSize: 'clamp(7rem, 22vw, 21rem)' }}
+        >
+          {profile.firstName}
+        </p>
+      </div>
+
+      {/* Cinematic-portofilo editorial furniture: welcome strip, chips, arrows, corner dots */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-[4] hidden md:block">
+        <p className="absolute left-1/2 top-[11%] flex -translate-x-1/2 items-center gap-3 whitespace-nowrap font-editorial text-[13px] font-bold uppercase tracking-[0.22em] text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]">
+          <span className="tracking-[0.14em] text-crimson-2">•••</span>
+          <span>Welcome to my world</span>
+          <span className="tracking-[0.14em] text-crimson-2">•••</span>
+        </p>
+        <span className="cine-chip absolute left-[48%] top-[24%]">• Developer Saransh •</span>
+        <span className="cine-chip absolute right-[7%] top-[48%]">• Builder •</span>
+        <span className="font-editorial absolute bottom-10 left-8 text-xs tracking-[0.35em] text-white/30">‹‹‹‹</span>
+        <span className="font-editorial absolute bottom-10 right-24 text-xs tracking-[0.35em] text-white/30">››››</span>
+        <div className="cine-grid-dots absolute bottom-8 right-8">
+          {Array.from({ length: 15 }).map((_, i) => (
+            <i key={i} />
+          ))}
+        </div>
       </div>
 
       {/* portrait */}
@@ -127,7 +152,7 @@ export default function Hero({ onPlay, onResume, profileId }: { onPlay: () => vo
         </motion.p>
 
         <motion.div variants={item} className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px] font-medium text-mist">
-          <span className="rounded border border-white/25 px-1.5 py-px text-[10px] font-bold tracking-wider text-bone">AI·ML</span>
+          <span className="rounded border border-white/25 px-1.5 py-px text-[10px] font-bold tracking-wider text-bone">CSE</span>
           {meta.map((m, i) => (
             <span key={m} className="flex items-center gap-3">
               {i > 0 && <span className="h-1 w-1 rounded-full bg-smoke" />}

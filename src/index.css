@@ -1,18 +1,55 @@
 @import 'tailwindcss';
 
+@font-face {
+  font-family: 'Anton';
+  src: url('/fonts/anton-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Oswald';
+  src: url('/fonts/oswald-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Oswald';
+  src: url('/fonts/oswald-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Oswald';
+  src: url('/fonts/oswald-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Bodoni Moda';
+  src: url('/fonts/bodonimoda-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
-  --color-ink: #07070a;
-  --color-ink-2: #0e0e13;
-  --color-ink-3: #16161d;
-  --color-crimson: #e5132b;
-  --color-crimson-2: #ff3d5a;
-  --color-bone: #f4f1ec;
+  --color-ink: #030305;
+  --color-ink-2: #0a0a0e;
+  --color-ink-3: #13131a;
+  --color-crimson: #de1b1c;
+  --color-crimson-2: #ff2a2b;
+  --color-bone: #ededed;
   --color-mist: #a7a6ad;
   --color-smoke: #6d6c75;
-  --font-display: 'Bebas Neue', 'Oswald', Impact, sans-serif;
-  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-display: 'Anton', 'Bebas Neue', 'Oswald', Impact, sans-serif;
+  --font-serif: 'Bodoni Moda', 'Instrument Serif', Georgia, serif;
+  --font-editorial: 'Oswald', 'Arial Narrow', system-ui, sans-serif;
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --ease-cine: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-cine: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 :root {
@@ -134,12 +171,53 @@ a:focus-visible {
   to { background-position: 200% center; }
 }
 .shimmer-text {
-  background: linear-gradient(90deg, #f4f1ec 0%, #f4f1ec 40%, #ff8a9a 50%, #f4f1ec 60%, #f4f1ec 100%);
+  background: linear-gradient(90deg, #ededed 0%, #ededed 40%, #ff5a65 50%, #ededed 60%, #ededed 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   animation: shimmer 6s linear infinite;
+}
+
+/* Distressed crimson wordmark inspired by cinematic-portofilo */
+.grunge-word {
+  background-color: #de1b1c;
+  background-image: url('/tex/grunge.png');
+  background-size: 260px;
+  background-blend-mode: multiply;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: saturate(1.35) contrast(1.16) brightness(1.18);
+}
+
+.cine-chip {
+  font-family: var(--font-editorial);
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #ededed;
+  white-space: nowrap;
+}
+
+.cine-grid-dots {
+  display: grid;
+  grid-template-columns: repeat(5, 4px);
+  gap: 8px;
+  opacity: 0.35;
+}
+.cine-grid-dots i {
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #de1b1c;
 }
 
 @media (prefers-reduced-motion: reduce) {
