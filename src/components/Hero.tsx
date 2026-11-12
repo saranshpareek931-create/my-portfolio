@@ -39,7 +39,6 @@ export default function Hero({ onPlay, onResume, profileId }: { onPlay: () => vo
   // interactive horizontal 3D drag rotation (mouse & touch)
   const manualRotY = useMotionValue(0);
   const springRotY = useSpring(manualRotY, { stiffness: 120, damping: 18 });
-  const imgRotY = useTransform([parallaxRotY, springRotY], ([p, m]: number[]) => p + m);
   const dragState = useRef<{ active: boolean; startX: number; baseRot: number }>({ active: false, startX: 0, baseRot: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [hasRotated, setHasRotated] = useState(false);
@@ -119,53 +118,61 @@ export default function Hero({ onPlay, onResume, profileId }: { onPlay: () => vo
         <motion.div
           className="relative h-full w-full lg:h-[86vh]"
           style={{
-            rotateY: imgRotY,
+            rotateY: parallaxRotY,
             rotateX: imgRotX,
             x: imgShiftX,
             transformPerspective: 1200,
-            transformStyle: 'preserve-3d',
           }}
           initial={{ clipPath: 'inset(100% -30% -10% -30%)', opacity: 0 }}
           animate={{ clipPath: 'inset(-30% -30% -10% -30%)', opacity: 1 }}
           transition={{ duration: 1.6, ease: EASE, delay: 0.1 }}
         >
-          {/* rim light ring (recessed slightly in Z-depth for 3D parallax) */}
+          {/* rim light ring (stays stationary with panel) */}
           <div
             aria-hidden
             className="absolute bottom-[8%] left-1/2 h-[78%] w-[78%] -translate-x-1/2 rounded-full border border-crimson-2/25 shadow-[0_0_120px_rgba(229,19,43,0.38),inset_0_0_80px_rgba(229,19,43,0.2)]"
-            style={{ transform: 'translateZ(-36px)' }}
           />
 
-          {/* Front 3D Portrait Face */}
-          <div className="absolute inset-0" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(18px)' }}>
-            <img
-              src={profile.portrait.src}
-              srcSet={profile.portrait.srcSet}
-              sizes="(max-width: 1024px) 100vw, 54vw"
-              alt={profile.portrait.alt}
-              draggable={false}
-              className="pointer-events-none absolute bottom-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 object-contain object-bottom drop-shadow-[0_30px_60px_rgba(0,0,0,0.6)] [mask-image:linear-gradient(to_bottom,black_62%,transparent_97%)]"
-            />
-            <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_80%_30%,rgba(255,61,90,0.16),transparent_70%)] mix-blend-screen" />
-          </div>
-
-          {/* Back 3D Face (revealed when rotated 180° horizontally) */}
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg) translateZ(18px)' }}
+          {/* ONLY the character rotates horizontally in 3D */}
+          <motion.div
+            className="absolute inset-0"
+            style={{
+              rotateY: springRotY,
+              transformPerspective: 1200,
+              transformStyle: 'preserve-3d',
+            }}
           >
-            <div className="glass flex h-[62%] w-[70%] max-w-[340px] flex-col items-center justify-center rounded-3xl border border-crimson-2/30 bg-[radial-gradient(circle_at_50%_20%,rgba(229,19,43,0.28),rgba(10,10,16,0.94))] p-6 text-center shadow-[0_24px_80px_rgba(229,19,43,0.25)]">
-              <span className="font-display text-6xl text-crimson-2">S</span>
-              <p className="mt-2 font-display text-3xl tracking-wider text-bone">{profile.firstName}</p>
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.36em] text-crimson-2">{profile.originalLabel}</p>
-              <p className="mt-4 text-xs leading-relaxed text-mist">{profile.role} · {profile.location}</p>
-              <span className="mt-5 rounded-full border border-white/15 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-smoke">
-                ↔ DRAG TO SPIN BACK
-              </span>
+            {/* Front 3D Portrait Face */}
+            <div className="absolute inset-0" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(18px)' }}>
+              <img
+                src={profile.portrait.src}
+                srcSet={profile.portrait.srcSet}
+                sizes="(max-width: 1024px) 100vw, 54vw"
+                alt={profile.portrait.alt}
+                draggable={false}
+                className="pointer-events-none absolute bottom-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 object-contain object-bottom drop-shadow-[0_30px_60px_rgba(0,0,0,0.6)] [mask-image:linear-gradient(to_bottom,black_62%,transparent_97%)]"
+              />
+              <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_80%_30%,rgba(255,61,90,0.16),transparent_70%)] mix-blend-screen" />
             </div>
-          </div>
 
-          {/* floating UI chips */}
+            {/* Back 3D Face (revealed when character rotates 180° horizontally) */}
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg) translateZ(18px)' }}
+            >
+              <div className="glass flex h-[62%] w-[70%] max-w-[340px] flex-col items-center justify-center rounded-3xl border border-crimson-2/30 bg-[radial-gradient(circle_at_50%_20%,rgba(229,19,43,0.28),rgba(10,10,16,0.94))] p-6 text-center shadow-[0_24px_80px_rgba(229,19,43,0.25)]">
+                <span className="font-display text-6xl text-crimson-2">S</span>
+                <p className="mt-2 font-display text-3xl tracking-wider text-bone">{profile.firstName}</p>
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.36em] text-crimson-2">{profile.originalLabel}</p>
+                <p className="mt-4 text-xs leading-relaxed text-mist">{profile.role} · {profile.location}</p>
+                <span className="mt-5 rounded-full border border-white/15 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-smoke">
+                  ↔ DRAG TO SPIN BACK
+                </span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* floating UI chips (stay stationary with panel) */}
           {floating.map((f, i) => (
             <FloatChip key={f.text} {...f} index={i} mx={chipX} my={chipY} />
           ))}
