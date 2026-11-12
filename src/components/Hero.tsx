@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { motion, useMotionValue, useScroll, useSpring, useTransform } from 'framer-motion';
 import { achievements, education, profile, projects, type ProfileId } from '../data/portfolio';
 import { useFinePointer } from '../hooks/useMedia';
@@ -29,19 +29,12 @@ export default function Hero({ onPlay, onResume, profileId }: { onPlay: () => vo
   const my = useMotionValue(0);
   const px = useSpring(mx, { stiffness: 60, damping: 18 });
   const py = useSpring(my, { stiffness: 60, damping: 18 });
-  const parallaxRotY = useTransform(px, [-1, 1], [-4, 4]);
+  const imgRotY = useTransform(px, [-1, 1], [-4, 4]);
   const imgRotX = useTransform(py, [-1, 1], [3, -3]);
   const imgShiftX = useTransform(px, [-1, 1], [-10, 10]);
   const chipX = useTransform(px, [-1, 1], [18, -18]);
   const chipY = useTransform(py, [-1, 1], [12, -12]);
   const glowX = useTransform(px, [-1, 1], ['-6%', '6%']);
-
-  // interactive horizontal 3D drag rotation (mouse & touch)
-  const manualRotY = useMotionValue(0);
-  const springRotY = useSpring(manualRotY, { stiffness: 120, damping: 18 });
-  const dragState = useRef<{ active: boolean; startX: number; baseRot: number }>({ active: false, startX: 0, baseRot: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [hasRotated, setHasRotated] = useState(false);
 
   const meta = [
     education[0].period,
@@ -79,122 +72,35 @@ export default function Hero({ onPlay, onResume, profileId }: { onPlay: () => vo
         <span className="light-streak left-[55%] top-[44%] w-[30vw]" style={{ animationDelay: '5.2s' }} />
       </div>
 
-      {/* interactive 3D rotatable portrait */}
+      {/* portrait */}
       <motion.div
-        className={`absolute inset-x-0 top-12 z-[5] flex h-[54svh] select-none items-end justify-center sm:h-[64svh] lg:bottom-0 lg:left-auto lg:right-[3vw] lg:top-20 lg:h-auto lg:w-[54vw] xl:right-[6vw] xl:w-[48vw] touch-pan-y ${
-          isDragging ? 'cursor-grabbing' : 'cursor-grab'
-        }`}
+        className="absolute inset-x-0 top-12 z-[2] flex h-[64svh] items-end justify-center sm:h-[70svh] lg:bottom-0 lg:left-auto lg:right-[3vw] lg:top-20 lg:h-auto lg:w-[54vw] xl:right-[6vw] xl:w-[48vw]"
         style={{ y: imgY, scale: imgScale, opacity: fade }}
-        onPointerDown={(e) => {
-          dragState.current = { active: true, startX: e.clientX, baseRot: manualRotY.get() };
-          setIsDragging(true);
-          e.currentTarget.setPointerCapture(e.pointerId);
-        }}
-        onPointerMove={(e) => {
-          if (!dragState.current.active) return;
-          const delta = e.clientX - dragState.current.startX;
-          manualRotY.set(dragState.current.baseRot + delta * 0.65);
-          if (Math.abs(delta) > 6 && !hasRotated) setHasRotated(true);
-        }}
-        onPointerUp={(e) => {
-          if (!dragState.current.active) return;
-          dragState.current.active = false;
-          setIsDragging(false);
-          try {
-            e.currentTarget.releasePointerCapture(e.pointerId);
-          } catch {
-            /* ignore */
-          }
-        }}
-        onPointerCancel={() => {
-          dragState.current.active = false;
-          setIsDragging(false);
-        }}
-        onDoubleClick={() => {
-          manualRotY.set(0);
-          setHasRotated(false);
-        }}
       >
         <motion.div
           className="relative h-full w-full lg:h-[86vh]"
-          style={{
-            rotateY: parallaxRotY,
-            rotateX: imgRotX,
-            x: imgShiftX,
-            transformPerspective: 1200,
-          }}
+          style={{ rotateY: imgRotY, rotateX: imgRotX, x: imgShiftX, transformPerspective: 1200 }}
           initial={{ clipPath: 'inset(100% -30% -10% -30%)', opacity: 0 }}
           animate={{ clipPath: 'inset(-30% -30% -10% -30%)', opacity: 1 }}
           transition={{ duration: 1.6, ease: EASE, delay: 0.1 }}
         >
-          {/* rim light ring (stays stationary with panel) */}
-          <div
-            aria-hidden
-            className="absolute bottom-[8%] left-1/2 h-[78%] w-[78%] -translate-x-1/2 rounded-full border border-crimson-2/25 shadow-[0_0_120px_rgba(229,19,43,0.38),inset_0_0_80px_rgba(229,19,43,0.2)]"
+          {/* rim light ring */}
+          <div aria-hidden className="absolute bottom-[8%] left-1/2 h-[78%] w-[78%] -translate-x-1/2 rounded-full border border-crimson-2/20 shadow-[0_0_120px_rgba(229,19,43,0.35),inset_0_0_80px_rgba(229,19,43,0.18)]" />
+          <img
+            src={profile.portrait.src}
+            srcSet={profile.portrait.srcSet}
+            sizes="(max-width: 1024px) 100vw, 54vw"
+            alt={profile.portrait.alt}
+            className="absolute bottom-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 object-contain object-bottom drop-shadow-[0_30px_60px_rgba(0,0,0,0.6)] [mask-image:linear-gradient(to_bottom,black_62%,transparent_97%)]"
           />
+          {/* crimson rim light on the image edge */}
+          <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_80%_30%,rgba(255,61,90,0.16),transparent_70%)] mix-blend-screen" />
 
-          {/* ONLY the character rotates horizontally in 3D */}
-          <motion.div
-            className="absolute inset-0"
-            style={{
-              rotateY: springRotY,
-              transformPerspective: 1200,
-              transformStyle: 'preserve-3d',
-            }}
-          >
-            {/* Front 3D Portrait Face */}
-            <div className="absolute inset-0" style={{ backfaceVisibility: 'hidden', transform: 'translateZ(18px)' }}>
-              <img
-                src={profile.portrait.src}
-                srcSet={profile.portrait.srcSet}
-                sizes="(max-width: 1024px) 100vw, 54vw"
-                alt={profile.portrait.alt}
-                draggable={false}
-                className="pointer-events-none absolute bottom-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 object-contain object-bottom drop-shadow-[0_30px_60px_rgba(0,0,0,0.6)] [mask-image:linear-gradient(to_bottom,black_62%,transparent_97%)]"
-              />
-              <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_80%_30%,rgba(255,61,90,0.16),transparent_70%)] mix-blend-screen" />
-            </div>
-
-            {/* Back 3D Face (revealed when character rotates 180° horizontally) */}
-            <div
-              className="absolute inset-0 flex items-center justify-center"
-              style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg) translateZ(18px)' }}
-            >
-              <div className="glass flex h-[62%] w-[70%] max-w-[340px] flex-col items-center justify-center rounded-3xl border border-crimson-2/30 bg-[radial-gradient(circle_at_50%_20%,rgba(229,19,43,0.28),rgba(10,10,16,0.94))] p-6 text-center shadow-[0_24px_80px_rgba(229,19,43,0.25)]">
-                <span className="font-display text-6xl text-crimson-2">S</span>
-                <p className="mt-2 font-display text-3xl tracking-wider text-bone">{profile.firstName}</p>
-                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.36em] text-crimson-2">{profile.originalLabel}</p>
-                <p className="mt-4 text-xs leading-relaxed text-mist">{profile.role} · {profile.location}</p>
-                <span className="mt-5 rounded-full border border-white/15 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-smoke">
-                  ↔ DRAG TO SPIN BACK
-                </span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* floating UI chips (stay stationary with panel) */}
+          {/* floating UI chips */}
           {floating.map((f, i) => (
             <FloatChip key={f.text} {...f} index={i} mx={chipX} my={chipY} />
           ))}
         </motion.div>
-
-        {/* subtle interactive 3D rotation hint */}
-        <div className="pointer-events-auto absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/15 bg-black/55 px-3.5 py-1.5 text-[10px] font-semibold tracking-[0.18em] text-mist backdrop-blur-md">
-          <span>↔ DRAG TO ROTATE 3D</span>
-          {hasRotated && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                manualRotY.set(0);
-                setHasRotated(false);
-              }}
-              className="rounded-full bg-crimson/80 px-2 py-0.5 text-[9px] text-white transition hover:bg-crimson"
-            >
-              RESET
-            </button>
-          )}
-        </div>
       </motion.div>
 
       {/* readability gradients */}

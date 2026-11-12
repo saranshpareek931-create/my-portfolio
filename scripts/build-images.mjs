@@ -9,7 +9,6 @@ const { data, info } = await sharp(src).ensureAlpha().raw().toBuffer({ resolveWi
 const { width, height, channels } = info;
 const rgba = Buffer.from(data);
 
-// Edge-connected flood-fill to remove the solid black backdrop cleanly without touching dark hair/tie inside
 const visited = new Uint8Array(width * height);
 const queue = new Int32Array(width * height);
 let head = 0;
@@ -49,7 +48,6 @@ while (head < tail) {
   enqueue(x, y - 1);
 }
 
-// Clear alpha on background pixels and feather 1px boundary
 for (let i = 0; i < width * height; i++) {
   if (visited[i]) {
     rgba[i * channels + 3] = 0;
@@ -96,4 +94,4 @@ await sharp({ create: { width: 1200, height: 630, channels: 4, background: '#070
   .jpeg({ quality: 85 })
   .toFile(`${OUT}/og-image.jpg`);
 
-console.log('Transparent 3D avatar WebP portraits & og-image built!');
+console.log('Clean transparent realistic portrait assets built!');
