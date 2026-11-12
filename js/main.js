@@ -44,7 +44,7 @@
 
   let heroPortrait = null;
   const portraitImg = new Image();
-  portraitImg.src = '/assets/portrait-720.webp';
+  portraitImg.src = '/assets/saransh-fullbody.webp';
   portraitImg.onload = () => { heroPortrait = portraitImg; };
 
   class Seq {
@@ -160,35 +160,51 @@
       // FALL sequence: Leap (0..0.46), Crowd/Shock (0.46..0.72), Rise (0.72..1)
       const inCrowd = p >= 0.46 && p < 0.72;
       const inRise = p >= 0.72;
+      const fallP = clamp(p / 0.46);
+      const riseP = clamp((p - 0.72) / 0.28);
 
-      // Golden shaft of light (or crimson/ash during crowd)
+      // Vertical shaft of light from above
       const cx = W * 0.5 + S.smx * W * 0.04;
-      const cy = H * (inRise ? 0.58 - (p - 0.72) * 0.35 : 0.44) + S.smy * H * 0.03;
-      const beam = ctx.createRadialGradient(cx, cy, W * 0.02, cx, cy, Math.max(W, H) * (inCrowd ? 0.5 : 0.58));
+      if (!inCrowd) {
+        const shaft = ctx.createLinearGradient(cx - W * 0.28, 0, cx + W * 0.28, 0);
+        shaft.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        shaft.addColorStop(0.5, inRise ? 'rgba(232, 184, 92, 0.22)' : 'rgba(255, 224, 155, 0.24)');
+        shaft.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = shaft;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // Golden core glow (or crimson during crowd impact)
+      const cy = H * (inRise ? lerp(0.62, 0.48, riseP) : inCrowd ? 0.54 : lerp(0.38, 0.56, fallP)) + S.smy * H * 0.03;
+      const beam = ctx.createRadialGradient(cx, cy, W * 0.02, cx, cy, Math.max(W, H) * (inCrowd ? 0.52 : 0.62));
       if (inCrowd) {
-        beam.addColorStop(0, 'rgba(232, 78, 27, 0.75)');
-        beam.addColorStop(0.35, 'rgba(130, 32, 18, 0.32)');
+        beam.addColorStop(0, 'rgba(232, 78, 27, 0.8)');
+        beam.addColorStop(0.35, 'rgba(130, 32, 18, 0.35)');
         beam.addColorStop(1, 'rgba(5, 5, 8, 0)');
       } else {
-        beam.addColorStop(0, 'rgba(255, 232, 178, 0.72)');
-        beam.addColorStop(0.32, 'rgba(232, 184, 92, 0.32)');
-        beam.addColorStop(0.65, 'rgba(232, 78, 27, 0.10)');
+        beam.addColorStop(0, 'rgba(255, 232, 178, 0.78)');
+        beam.addColorStop(0.34, 'rgba(232, 184, 92, 0.34)');
+        beam.addColorStop(0.66, 'rgba(232, 78, 27, 0.12)');
         beam.addColorStop(1, 'rgba(4, 4, 6, 0)');
       }
       ctx.fillStyle = beam;
       ctx.fillRect(0, 0, W, H);
 
-      // Vertical shaft streaks during the fall
+      // High-speed upward wind streaks so downward freefall feels fast and physical
       if (!inCrowd) {
         ctx.save();
-        ctx.strokeStyle = inRise ? 'rgba(232, 184, 92, 0.24)' : 'rgba(255, 236, 190, 0.22)';
-        ctx.lineWidth = Math.max(1, W * 0.0018);
+        ctx.lineCap = 'round';
         for (const st of this.streaks) {
-          const sx = W * (0.2 + st.x * 0.6);
-          const sy = ((st.y + p * 6 * st.sp) % 1.2 - 0.1) * H;
+          const sx = W * (0.14 + st.x * 0.72);
+          const flow = inRise ? (p * 5 + S.t * 0.12) * st.sp : (-p * 24 - S.t * 0.45) * st.sp;
+          const normY = (((st.y + flow) % 1.2) + 1.2) % 1.2 - 0.1;
+          const sy = normY * H;
+          const streakLen = st.len * (W / 600) * (inRise ? 0.7 : 1.6 + Math.min(Math.abs(S.vel) * 0.03, 1.5));
+          ctx.strokeStyle = inRise ? 'rgba(232, 184, 92, 0.28)' : 'rgba(255, 240, 200, 0.38)';
+          ctx.lineWidth = Math.max(1.2, W * 0.0022);
           ctx.beginPath();
           ctx.moveTo(sx, sy);
-          ctx.lineTo(sx, sy + st.len * (W / 720));
+          ctx.lineTo(sx, sy + streakLen);
           ctx.stroke();
         }
         ctx.restore();
@@ -200,21 +216,35 @@
         const rad = rp * Math.max(W, H) * 0.65;
         ctx.beginPath();
         ctx.arc(cx, H * 0.54, rad, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(232, 78, 27, ${(1 - rp) * 0.85})`;
-        ctx.lineWidth = Math.max(2, (1 - rp) * 14);
+        ctx.strokeStyle = `rgba(232, 78, 27, ${(1 - rp) * 0.9})`;
+        ctx.lineWidth = Math.max(2, (1 - rp) * 16);
         ctx.stroke();
       }
 
-      // Saransh's portrait suspended / rising inside the light shaft
+      // Saransh's full-body character falling, banking & rising inside the light shaft
       if (heroPortrait) {
         ctx.save();
-        const scale = inRise ? lerp(0.55, 0.85, (p - 0.72) / 0.28) : inCrowd ? 0.52 : lerp(0.66, 0.56, p / 0.46);
+        const scale = inRise
+          ? lerp(0.58, 0.92, riseP)
+          : inCrowd
+            ? 0.58
+            : lerp(0.88, 0.62, fallP);
         const ph = H * scale;
         const pw = ph * (heroPortrait.naturalWidth / heroPortrait.naturalHeight);
-        const py = inRise ? H * lerp(0.62, 0.50, (p - 0.72) / 0.28) : H * (0.48 + Math.sin(p * 12) * 0.015);
+        const py = inRise
+          ? H * lerp(0.58, 0.49, riseP)
+          : inCrowd
+            ? H * 0.56
+            : H * lerp(0.42, 0.54, fallP) + Math.sin(S.t * 2.2) * H * 0.012;
+        const rot = inRise
+          ? lerp(-0.1, 0, riseP)
+          : inCrowd
+            ? 0.06
+            : Math.sin(fallP * Math.PI * 2.2) * 0.14 - 0.08 + S.smx * 0.08;
+
         ctx.translate(cx, py);
-        if (!inRise && !inCrowd) ctx.rotate(S.smx * 0.06);
-        ctx.globalAlpha = inCrowd ? 0.65 : 0.94;
+        ctx.rotate(rot);
+        ctx.globalAlpha = inCrowd ? 0.78 : 0.98;
         ctx.drawImage(heroPortrait, -pw / 2, -ph / 2, pw, ph);
         ctx.restore();
       }
