@@ -89,11 +89,12 @@
     constructor(canvas, seq, ax, ay, maxDpr) {
       this.c = canvas; this.ctx = canvas.getContext('2d', { alpha: false });
       this.seq = seq; this.ax = ax; this.ay = ay; this.maxDpr = maxDpr; this.key = '';
-      this.streaks = Array.from({ length: 42 }, (_, i) => ({
-        x: ((i * 73) % 100) / 100,
-        y: ((i * 37) % 100) / 100,
-        len: 40 + (i % 5) * 35,
-        sp: 0.6 + (i % 4) * 0.4,
+      this.motes = Array.from({ length: 48 }, (_, i) => ({
+        x: ((i * 73 + 19) % 100) / 100,
+        y: ((i * 37 + 11) % 100) / 100,
+        r: 1.4 + (i % 5) * 1.1,
+        sp: 0.55 + (i % 4) * 0.35,
+        alpha: 0.22 + (i % 3) * 0.18,
       }));
     }
     resize() {
@@ -124,35 +125,42 @@
         return a;
       }
 
-      // Procedural high-contrast cinema fallback
+      // Cinema-grade procedural fallback
       const p = clamp(f / Math.max(1, seq.count - 1));
       ctx.globalAlpha = 1;
-      ctx.fillStyle = '#040406';
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = '#030305';
       ctx.fillRect(0, 0, W, H);
 
       if (seq.kind === 'portal') {
-        // Burning doorway in dark clouds
-        const open = 0.25 + p * 0.75;
-        const glow = ctx.createRadialGradient(W * 0.5, H * 0.46, 8, W * 0.5, H * 0.46, Math.max(W, H) * (0.28 + open * 0.45));
-        glow.addColorStop(0, `rgba(255, 240, 200, ${0.85 * open})`);
-        glow.addColorStop(0.28, `rgba(232, 184, 92, ${0.55 * open})`);
-        glow.addColorStop(0.58, `rgba(232, 78, 27, ${0.28 * open})`);
-        glow.addColorStop(1, 'rgba(4, 4, 6, 0)');
-        ctx.fillStyle = glow;
+        // Volumetric glowing threshold doorway in soft mist
+        const open = sstep(0, 1, p);
+        const cx = W * 0.5 + S.smx * W * 0.02;
+        const cy = H * 0.45 + S.smy * H * 0.02;
+
+        const bloom = ctx.createRadialGradient(cx, cy, 4, cx, cy, Math.max(W, H) * (0.34 + open * 0.44));
+        bloom.addColorStop(0, `rgba(255, 246, 220, ${0.42 + open * 0.52})`);
+        bloom.addColorStop(0.24, `rgba(232, 184, 92, ${0.26 + open * 0.34})`);
+        bloom.addColorStop(0.54, `rgba(232, 78, 27, ${0.12 + open * 0.18})`);
+        bloom.addColorStop(1, 'rgba(3, 3, 5, 0)');
+        ctx.fillStyle = bloom;
         ctx.fillRect(0, 0, W, H);
 
-        const dw = W * (0.14 + open * 0.14);
-        const dh = H * (0.38 + open * 0.24);
-        const dx = (W - dw) / 2, dy = H * 0.46 - dh * 0.5;
+        // Soft glowing doorway threshold (no harsh lines)
+        const dw = W * (0.10 + open * 0.14);
+        const dh = H * (0.32 + open * 0.28);
+        const dx = cx - dw / 2, dy = cy - dh * 0.48;
+        const doorGrad = ctx.createLinearGradient(0, dy, 0, dy + dh);
+        doorGrad.addColorStop(0, `rgba(255, 248, 228, ${0.45 + open * 0.5})`);
+        doorGrad.addColorStop(0.65, `rgba(232, 184, 92, ${0.28 + open * 0.4})`);
+        doorGrad.addColorStop(1, 'rgba(232, 78, 27, 0)');
         ctx.save();
-        ctx.strokeStyle = `rgba(232, 184, 92, ${0.4 + open * 0.5})`;
-        ctx.lineWidth = Math.max(2, W * 0.003);
-        ctx.strokeRect(dx, dy, dw, dh);
-        const inner = ctx.createLinearGradient(0, dy, 0, dy + dh);
-        inner.addColorStop(0, `rgba(255, 245, 215, ${0.65 * open})`);
-        inner.addColorStop(1, `rgba(232, 78, 27, ${0.2 * open})`);
-        ctx.fillStyle = inner;
-        ctx.fillRect(dx, dy, dw, dh);
+        ctx.shadowColor = 'rgba(232, 184, 92, 0.75)';
+        ctx.shadowBlur = 32;
+        ctx.fillStyle = doorGrad;
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(dx, dy, dw, dh, [dw * 0.48, dw * 0.48, 0, 0]) : ctx.rect(dx, dy, dw, dh);
+        ctx.fill();
         ctx.restore();
         return null;
       }
@@ -163,88 +171,105 @@
       const fallP = clamp(p / 0.46);
       const riseP = clamp((p - 0.72) / 0.28);
 
-      // Vertical shaft of light from above
-      const cx = W * 0.5 + S.smx * W * 0.04;
+      const cx = W * 0.5 + S.smx * W * 0.035;
+      const cy = H * (inRise ? lerp(0.58, 0.48, easeOut(riseP)) : inCrowd ? 0.54 : lerp(0.36, 0.55, easeInOut(fallP))) + S.smy * H * 0.025;
+
+      // 1. Soft volumetric god-ray columns
       if (!inCrowd) {
-        const shaft = ctx.createLinearGradient(cx - W * 0.28, 0, cx + W * 0.28, 0);
-        shaft.addColorStop(0, 'rgba(0, 0, 0, 0)');
-        shaft.addColorStop(0.5, inRise ? 'rgba(232, 184, 92, 0.22)' : 'rgba(255, 224, 155, 0.24)');
-        shaft.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        ctx.fillStyle = shaft;
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        const rayW = W * (inRise ? 0.44 : 0.36);
+        const ray = ctx.createLinearGradient(cx - rayW, 0, cx + rayW, 0);
+        ray.addColorStop(0, 'rgba(0,0,0,0)');
+        ray.addColorStop(0.35, 'rgba(232, 184, 92, 0.09)');
+        ray.addColorStop(0.5, 'rgba(255, 232, 178, 0.22)');
+        ray.addColorStop(0.65, 'rgba(232, 184, 92, 0.09)');
+        ray.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = ray;
         ctx.fillRect(0, 0, W, H);
+        ctx.restore();
       }
 
-      // Golden core glow (or crimson during crowd impact)
-      const cy = H * (inRise ? lerp(0.62, 0.48, riseP) : inCrowd ? 0.54 : lerp(0.38, 0.56, fallP)) + S.smy * H * 0.03;
-      const beam = ctx.createRadialGradient(cx, cy, W * 0.02, cx, cy, Math.max(W, H) * (inCrowd ? 0.52 : 0.62));
+      // 2. Smooth atmospheric core halo behind Saransh
+      const haloR = Math.max(W, H) * (inCrowd ? 0.48 : 0.56);
+      const beam = ctx.createRadialGradient(cx, cy, W * 0.015, cx, cy, haloR);
       if (inCrowd) {
-        beam.addColorStop(0, 'rgba(232, 78, 27, 0.8)');
-        beam.addColorStop(0.35, 'rgba(130, 32, 18, 0.35)');
-        beam.addColorStop(1, 'rgba(5, 5, 8, 0)');
+        beam.addColorStop(0, 'rgba(232, 78, 27, 0.65)');
+        beam.addColorStop(0.38, 'rgba(120, 26, 14, 0.26)');
+        beam.addColorStop(1, 'rgba(3, 3, 5, 0)');
       } else {
-        beam.addColorStop(0, 'rgba(255, 232, 178, 0.78)');
-        beam.addColorStop(0.34, 'rgba(232, 184, 92, 0.34)');
-        beam.addColorStop(0.66, 'rgba(232, 78, 27, 0.12)');
-        beam.addColorStop(1, 'rgba(4, 4, 6, 0)');
+        beam.addColorStop(0, 'rgba(255, 236, 190, 0.68)');
+        beam.addColorStop(0.28, 'rgba(232, 184, 92, 0.28)');
+        beam.addColorStop(0.62, 'rgba(232, 78, 27, 0.09)');
+        beam.addColorStop(1, 'rgba(3, 3, 5, 0)');
       }
       ctx.fillStyle = beam;
       ctx.fillRect(0, 0, W, H);
 
-      // High-speed upward wind streaks so downward freefall feels fast and physical
+      // 3. Soft floating golden dust motes & subtle motion blur trails (zero harsh lines)
       if (!inCrowd) {
         ctx.save();
-        ctx.lineCap = 'round';
-        for (const st of this.streaks) {
-          const sx = W * (0.14 + st.x * 0.72);
-          const flow = inRise ? (p * 5 + S.t * 0.12) * st.sp : (-p * 24 - S.t * 0.45) * st.sp;
-          const normY = (((st.y + flow) % 1.2) + 1.2) % 1.2 - 0.1;
-          const sy = normY * H;
-          const streakLen = st.len * (W / 600) * (inRise ? 0.7 : 1.6 + Math.min(Math.abs(S.vel) * 0.03, 1.5));
-          ctx.strokeStyle = inRise ? 'rgba(232, 184, 92, 0.28)' : 'rgba(255, 240, 200, 0.38)';
-          ctx.lineWidth = Math.max(1.2, W * 0.0022);
+        ctx.globalCompositeOperation = 'screen';
+        for (const m of this.motes) {
+          const mx = W * (0.12 + m.x * 0.76) + Math.sin(S.t * 0.8 + m.x * 10) * 6;
+          const flow = inRise ? (p * 4 + S.t * 0.08) * m.sp : (-p * 18 - S.t * 0.28) * m.sp;
+          const my = ((((m.y + flow) % 1.16) + 1.16) % 1.16 - 0.08) * H;
+          const stretch = inRise ? 1.2 : 1.8 + Math.min(Math.abs(S.vel) * 0.06, 4.5);
+
+          ctx.save();
+          ctx.translate(mx, my);
+          ctx.scale(1, stretch);
+          const mg = ctx.createRadialGradient(0, 0, 0, 0, 0, m.r * 2.2);
+          mg.addColorStop(0, `rgba(255, 240, 200, ${m.alpha})`);
+          mg.addColorStop(1, 'rgba(232, 184, 92, 0)');
+          ctx.fillStyle = mg;
           ctx.beginPath();
-          ctx.moveTo(sx, sy);
-          ctx.lineTo(sx, sy + streakLen);
-          ctx.stroke();
+          ctx.arc(0, 0, m.r * 2.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
         }
         ctx.restore();
       }
 
-      // Shockwave ring in the crowd
+      // 4. Smooth glowing shockwave ring in the crowd
       if (p >= 0.47 && p <= 0.76) {
-        const rp = clamp((p - 0.47) / 0.26);
-        const rad = rp * Math.max(W, H) * 0.65;
+        const rp = easeOut(clamp((p - 0.47) / 0.26));
+        const rad = rp * Math.max(W, H) * 0.68;
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        ctx.shadowColor = 'rgba(232, 78, 27, 0.9)';
+        ctx.shadowBlur = 24;
         ctx.beginPath();
         ctx.arc(cx, H * 0.54, rad, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(232, 78, 27, ${(1 - rp) * 0.9})`;
-        ctx.lineWidth = Math.max(2, (1 - rp) * 16);
+        ctx.strokeStyle = `rgba(255, 160, 100, ${(1 - rp) * 0.82})`;
+        ctx.lineWidth = Math.max(2, (1 - rp) * 12);
         ctx.stroke();
+        ctx.restore();
       }
 
-      // Saransh's full-body character falling, banking & rising inside the light shaft
+      // 5. Saransh's full-body character cleanly lit inside the shaft
       if (heroPortrait) {
         ctx.save();
         const scale = inRise
-          ? lerp(0.58, 0.92, riseP)
+          ? lerp(0.62, 0.88, easeOut(riseP))
           : inCrowd
-            ? 0.58
-            : lerp(0.88, 0.62, fallP);
+            ? 0.60
+            : lerp(0.84, 0.64, easeInOut(fallP));
         const ph = H * scale;
         const pw = ph * (heroPortrait.naturalWidth / heroPortrait.naturalHeight);
-        const py = inRise
-          ? H * lerp(0.58, 0.49, riseP)
-          : inCrowd
-            ? H * 0.56
-            : H * lerp(0.42, 0.54, fallP) + Math.sin(S.t * 2.2) * H * 0.012;
         const rot = inRise
-          ? lerp(-0.1, 0, riseP)
+          ? lerp(-0.08, 0, easeOut(riseP))
           : inCrowd
-            ? 0.06
-            : Math.sin(fallP * Math.PI * 2.2) * 0.14 - 0.08 + S.smx * 0.08;
+            ? 0.04
+            : Math.sin(fallP * Math.PI * 1.5) * 0.09 - 0.04 + S.smx * 0.05;
 
-        ctx.translate(cx, py);
+        ctx.translate(cx, cy);
         ctx.rotate(rot);
-        ctx.globalAlpha = inCrowd ? 0.78 : 0.98;
+
+        // Soft rim backlight behind the character so edges melt smoothly into the light
+        ctx.shadowColor = inCrowd ? 'rgba(232, 78, 27, 0.65)' : 'rgba(232, 184, 92, 0.55)';
+        ctx.shadowBlur = 28;
+        ctx.globalAlpha = inCrowd ? 0.84 : 0.98;
         ctx.drawImage(heroPortrait, -pw / 2, -ph / 2, pw, ph);
         ctx.restore();
       }
@@ -255,23 +280,38 @@
 
   // Tiny blurred copy of the current frame stretched behind everything
   class Ambient {
-    constructor(canvas) { this.c = canvas; this.ctx = canvas.getContext('2d'); this.img = null; }
-    resize() { this.c.width = 72; this.c.height = Math.max(2, Math.round(72 * S.H / S.W)); this.img = null; }
-    draw(img) {
-      if (!img || img === this.img) return;
-      this.img = img;
+    constructor(canvas) { this.c = canvas; this.ctx = canvas.getContext('2d'); this.img = null; this.lastP = -1; }
+    resize() { this.c.width = 72; this.c.height = Math.max(2, Math.round(72 * S.H / S.W)); this.img = null; this.lastP = -1; }
+    draw(img, p = 0) {
       const { ctx, c } = this;
-      ctx.filter = 'blur(3px)';
-      ctx.fillStyle = '#000';
+      if (img) {
+        if (img === this.img) return;
+        this.img = img;
+        ctx.filter = 'blur(3px)';
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, c.width, c.height);
+        const s = 1.6;
+        ctx.save();
+        ctx.translate(c.width / 2, c.height / 2);
+        ctx.scale(s, 1.1);
+        ctx.translate(-c.width / 2, -c.height / 2);
+        drawCover(ctx, img, c.width, c.height, 0.5, 0.5);
+        ctx.restore();
+        ctx.filter = 'none';
+        return;
+      }
+      // Procedural ambient glow matching the current story beat
+      if (Math.abs(p - this.lastP) < 0.01) return;
+      this.lastP = p;
+      const inCrowd = p >= 0.46 && p < 0.72;
+      ctx.fillStyle = '#030305';
       ctx.fillRect(0, 0, c.width, c.height);
-      const s = 1.6;
-      ctx.save();
-      ctx.translate(c.width / 2, c.height / 2);
-      ctx.scale(s, 1.1);
-      ctx.translate(-c.width / 2, -c.height / 2);
-      drawCover(ctx, img, c.width, c.height, 0.5, 0.5);
-      ctx.restore();
-      ctx.filter = 'none';
+      const g = ctx.createRadialGradient(c.width * 0.5, c.height * 0.48, 2, c.width * 0.5, c.height * 0.48, c.width * 0.65);
+      g.addColorStop(0, inCrowd ? 'rgba(232, 78, 27, 0.45)' : 'rgba(232, 184, 92, 0.38)');
+      g.addColorStop(0.55, inCrowd ? 'rgba(90, 18, 12, 0.16)' : 'rgba(130, 72, 24, 0.14)');
+      g.addColorStop(1, 'rgba(3, 3, 5, 0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, c.width, c.height);
     }
   }
 
@@ -552,7 +592,7 @@
 
     // film + ambient
     const img = filmFall.render(frameAt(p));
-    if (img) ambient.draw(img);
+    ambient.draw(img, p);
 
     // camera follows the pointer
     const camT = `rotateX(${f2(-S.smy * 7)}deg) rotateY(${f2(S.smx * 10)}deg)`;
