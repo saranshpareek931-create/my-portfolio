@@ -1,94 +1,97 @@
-import { motion } from 'framer-motion';
-import { education, experience, profile } from '../data/portfolio';
-import { EASE, SectionHeading, Tilt } from './fx';
+import { useEffect, useRef, useState } from 'react';
+import { useInView, useReducedMotion } from 'framer-motion';
+import { stats } from '../data/portfolio';
+import { gsap, ScrollTrigger } from '../lib/scroll';
+import SectionLabel from './ui/SectionLabel';
+import Reveal from './ui/Reveal';
+
+const STATEMENT =
+  'A Diploma in Computer Engineering student at Government Polytechnic Lisana, Rewari, building practical digital products in educational technology, civic services and AI-powered learning with Python, Flask, JavaScript and SQL.';
+
+/** Oversized statement whose words light up as you scroll past — like a lamp warming up. */
+function ScrubStatement() {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const reduce = useReducedMotion();
+  useEffect(() => {
+    if (reduce || !ref.current) return;
+    const words = ref.current.querySelectorAll('[data-w]');
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        words,
+        { opacity: 0.14 },
+        {
+          opacity: 1,
+          stagger: 0.08,
+          ease: 'none',
+          scrollTrigger: { trigger: ref.current, start: 'top 80%', end: 'bottom 45%', scrub: true },
+        },
+      );
+    });
+    return () => ctx.revert();
+  }, [reduce]);
+  return (
+    <p ref={ref} className="text-[clamp(1.9rem,4.6vw,4.4rem)] leading-[1.06] font-medium tracking-[-0.045em]" aria-label={STATEMENT}>
+      {STATEMENT.split(' ').map((w, i) => (
+        <span key={i} data-w aria-hidden="true" className={/LLM|payment|SaaS/.test(w) ? 'font-serif font-normal tracking-[-0.02em] italic' : ''}>
+          {w}{' '}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+function Counter({ value, decimals, suffix }: { value: number; decimals: number; suffix: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: '0px 0px -10% 0px' });
+  const reduce = useReducedMotion();
+  const [n, setN] = useState(reduce ? value : 0);
+  useEffect(() => {
+    if (!inView || reduce) return;
+    const o = { v: 0 };
+    const tw = gsap.to(o, { v: value, duration: 1.8, ease: 'power3.out', onUpdate: () => setN(o.v) });
+    return () => {
+      tw.kill();
+    };
+  }, [inView, value, reduce]);
+  return (
+    <span ref={ref} className="tabular-nums">
+      {n.toFixed(decimals)}
+      {suffix}
+    </span>
+  );
+}
 
 export default function About() {
-  const facts = [
-    { k: 'Now', v: 'B.Tech, AI & ML', s: `${education[0].school} · ${education[0].score}` },
-    { k: 'Training', v: `${experience[0].role}, ${experience[0].company}`, s: experience[0].period },
-    { k: 'Primary language', v: 'Java', s: 'with Python, C, C++' },
-    { k: 'Based in', v: profile.location, s: 'India' },
-  ];
+  useEffect(() => {
+    ScrollTrigger.refresh();
+  }, []);
 
   return (
-    <>
-      <SectionHeading kicker="The Pilot" title="About Me" />
-      <div className="gutter grid items-center gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16">
-        <motion.div
-          className="mx-auto w-full max-w-md lg:max-w-none"
-          initial={{ opacity: 0, scale: 0.88, filter: 'blur(12px)' }}
-          whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-          viewport={{ once: true, margin: '-10% 0px' }}
-          transition={{ duration: 1.2, ease: EASE }}
-        >
-        <Tilt max={5} className="rounded-2xl">
-          <div className="relative aspect-[4/5] overflow-hidden rounded-2xl ring-1 ring-white/10">
-            <div className="absolute inset-0 bg-[radial-gradient(80%_60%_at_50%_30%,#5a0b1b,#14060a_60%,#07070a)]" />
-            <div className="absolute inset-0 opacity-50 [background-image:repeating-linear-gradient(90deg,rgba(255,255,255,0.03)_0px,rgba(255,255,255,0.03)_1px,transparent_1px,transparent_28px)]" />
-            <img
-              src="/assets/portrait-720.webp"
-              srcSet={profile.portrait.srcSet}
-              sizes="(max-width: 1024px) 90vw, 40vw"
-              alt={profile.portrait.alt}
-              loading="lazy"
-              className="absolute bottom-0 left-1/2 h-[92%] w-auto max-w-none -translate-x-1/2 object-contain object-bottom"
-            />
-            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/90 to-transparent" />
-            <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between">
-              <div>
-                <p className="text-[10px] font-bold tracking-[0.3em] text-crimson-2">STARRING</p>
-                <p className="font-display text-3xl leading-none text-bone">{profile.displayName}</p>
-              </div>
-              <span className="rounded border border-white/30 px-1.5 text-[10px] font-bold text-bone">S01–S05</span>
-            </div>
-          </div>
-        </Tilt>
-        </motion.div>
+    <section id="about" className="relative px-4 py-24 md:px-8 md:py-32" aria-labelledby="about-title">
+      <div className="mb-14 flex items-end justify-between gap-6 md:mb-20">
+        <SectionLabel index="01">About</SectionLabel>
+        <h2 id="about-title" className="sr-only">
+          About me
+        </h2>
+      </div>
 
-        <div>
-          <motion.p
-            className="font-serif text-[clamp(1.6rem,3.2vw,2.6rem)] italic leading-[1.15] text-bone"
-            initial={{ opacity: 0, y: 24, filter: 'blur(8px)' }}
-            whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            viewport={{ once: true }}
-            transition={{ duration: 1, ease: EASE }}
-          >
-            “{profile.intro}”
-          </motion.p>
-          <p className="mt-4 text-sm text-mist">— {profile.fullName}</p>
-
-          <motion.dl
-            className="mt-10 grid gap-px overflow-hidden rounded-xl bg-white/10 sm:grid-cols-2"
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            transition={{ staggerChildren: 0.08 }}
-          >
-            {facts.map((f) => (
-              <motion.div
-                key={f.k}
-                className="bg-ink-2 p-5"
-                variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } } }}
-              >
-                <dt className="text-[10px] font-bold uppercase tracking-[0.28em] text-smoke">{f.k}</dt>
-                <dd className="mt-2 text-base font-semibold text-bone">{f.v}</dd>
-                <dd className="mt-0.5 text-xs text-mist">{f.s}</dd>
-              </motion.div>
-            ))}
-          </motion.dl>
-
-          <div className="mt-8">
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.28em] text-smoke">Interests</p>
-            <div className="flex flex-wrap gap-2">
-              {profile.interests.map((i) => (
-                <span key={i} className="glass rounded-full px-3 py-1.5 text-xs font-medium text-bone">
-                  {i}
-                </span>
-              ))}
-            </div>
-          </div>
+      <div className="grid gap-16 md:grid-cols-12">
+        <div className="md:col-span-11">
+          <ScrubStatement />
         </div>
       </div>
-    </>
+
+      <div className="mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-[2px] border border-line bg-line md:mt-24 md:grid-cols-4">
+        {stats.map((s, i) => (
+          <Reveal key={s.label} delay={i * 0.08} className="bg-bg p-6 md:p-8">
+            <div className="text-[clamp(2.6rem,5vw,4.5rem)] leading-none font-medium tracking-[-0.05em]">
+              <Counter {...s} />
+            </div>
+            <div className="mt-4 text-sm text-muted">{s.label}</div>
+          </Reveal>
+        ))}
+      </div>
+
+    </section>
   );
 }
